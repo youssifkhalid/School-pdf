@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدرسة النوبارية الثانوية العسكرية</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: right;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .delete-btn {
+            background-color: #f44336;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+        .view-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .view-btn:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>مدرسة النوبارية الثانوية العسكرية</h1>
+        
+        <div class="form-grid">
+            <select id="grade">
+                <option value="">اختر الصف</option>
+                <option value="أولى ثانوي">أولى ثانوي</option>
+                <option value="ثانية ثانوي">ثانية ثانوي</option>
+                <option value="ثالثة ثانوي">ثالثة ثانوي</option>
+            </select>
+            <select id="term">
+                <option value="">اختر الترم</option>
+                <option value="الأول">الأول</option>
+                <option value="الثاني">الثاني</option>
+            </select>
+            <select id="chapter">
+                <option value="">اختر الفصل</option>
+                <option value="الأول">الأول</option>
+                <option value="الثاني">الثاني</option>
+                <option value="الثالث">الثالث</option>
+                <option value="الرابع">الرابع</option>
+                <option value="الخامس">الخامس</option>
+                <option value="السادس">السادس</option>
+                <option value="السابع">السابع</option>
+            </select>
+            <select id="subject">
+                <option value="">اختر المادة</option>
+            </select>
+            <button onclick="handleSearch()">بحث</button>
+        </div>
+        
+        <div class="form-grid">
+            <input type="text" id="title" placeholder="عنوان الدرس" required>
+            <input type="file" id="pdfFile" accept=".pdf" required>
+            <button onclick="handleUpload()">رفع الملف</button>
+        </div>
+
+        <table id="lessonsTable">
+            <thead>
+                <tr>
+                    <th>عنوان الدرس</th>
+                    <th>الصف</th>
+                    <th>المادة</th>
+                    <th>الترم</th>
+                    <th>الفصل</th>
+                    <th>الملف</th>
+                    <th>حذف</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        const subjects = {
+            'أولى ثانوي': ['اللغة الإنجليزية', 'اللغة العربية', 'اللغة الفرنسية', 'العلوم المتكاملة', 'الرياضيات', 'التاريخ', 'الجغرافيا'],
+            'ثانية ثانوي': ['الأحياء', 'الكيمياء', 'الفيزياء', 'اللغة العربية', 'اللغة الإنجليزية', 'اللغة الفرنسية', 'الرياضيات', 'التاريخ', 'الجغرافيا'],
+            'ثالثة ثانوي': ['الأحياء', 'الكيمياء', 'الفيزياء', 'اللغة العربية', 'اللغة الإنجليزية', 'اللغة الفرنسية', 'الرياضيات', 'التاريخ', 'الجغرافيا']
+        };
+
+        let lessons = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedLessons = localStorage.getItem('lessons');
+            if (storedLessons) {
+                lessons = JSON.parse(storedLessons);
+                renderLessons();
+            }
+
+            document.getElementById('grade').addEventListener('change', updateSubjects);
+        });
+
+        function updateSubjects() {
+            const grade = document.getElementById('grade').value;
+            const subjectSelect = document.getElementById('subject');
+            subjectSelect.innerHTML = '<option value="">اختر المادة</option>';
+            if (grade && subjects[grade]) {
+                subjects[grade].forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    subjectSelect.appendChild(option);
+                });
+            }
+        }
+
+        function handleSearch() {
+            const grade = document.getElementById('grade').value;
+            const subject = document.getElementById('subject').value;
+            const term = document.getElementById('term').value;
+            const chapter = document.getElementById('chapter').value;
+
+            const filtered = lessons.filter(lesson => 
+                (!grade || lesson.grade === grade) &&
+                (!subject || lesson.subject === subject) &&
+                (!term || lesson.term === term) &&
+                (!chapter || lesson.chapter === chapter)
+            );
+
+            renderLessons(filtered);
+        }
+
+        function handleUpload() {
+            const title = document.getElementById('title').value;
+            const grade = document.getElementById('grade').value;
+            const subject = document.getElementById('subject').value;
+            const term = document.getElementById('term').value;
+            const chapter = document.getElementById('chapter').value;
+            const file = document.getElementById('pdfFile').files[0];
+
+            if (!file || !grade || !subject || !term || !chapter || !title) {
+                alert('يرجى ملء جميع الحقول وتحديد ملف PDF');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const newLesson = {
+                    id: Date.now().toString(),
+                    title,
+                    grade,
+                    subject,
+                    term,
+                    chapter,
+                    fileUrl: event.target.result
+                };
+
+                lessons.push(newLesson);
+                localStorage.setItem('lessons', JSON.stringify(lessons));
+                renderLessons();
+
+                // Reset form
+                document.getElementById('title').value = '';
+                document.getElementById('pdfFile').value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleDelete(id) {
+            lessons = lessons.filter(lesson => lesson.id !== id);
+            localStorage.setItem('lessons', JSON.stringify(lessons));
+            renderLessons();
+        }
+
+        function renderLessons(lessonsToRender = lessons) {
+            const tbody = document.querySelector('#lessonsTable tbody');
+            tbody.innerHTML = '';
+            lessonsToRender.forEach(lesson => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${lesson.title}</td>
+                    <td>${lesson.grade}</td>
+                    <td>${lesson.subject}</td>
+                    <td>${lesson.term}</td>
+                    <td>${lesson.chapter}</td>
+                    <td><a href="${lesson.fileUrl}" target="_blank" class="view-btn">عرض</a></td>
+                    <td><button onclick="handleDelete('${lesson.id}')" class="delete-btn">حذف</button></td>
+                `;
+            });
+        }
+    </script>
+</body>
+</html> 
